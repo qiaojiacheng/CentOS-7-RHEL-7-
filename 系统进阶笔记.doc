@@ -1,0 +1,83 @@
+﻿SERVICES
+一、KVM虚拟化
+1、查看软件包组
+yum groups list hidden  "hidden 列出所有 显示隐藏"
+2、RHEL7中的虚拟化服务软件组：
+虚拟化平台 —— "Virtualization Platform"
+虚拟化主机 —— "Virtualization Host"
+虚拟化客户端 —— "Virtualization Client"
+3、安装主要KVM软件组
+yum  -y  groups  install  "Virtualization Host"  "Virtualization Client"  "Virtualization Platform"
+确保libvirtd服务可用    systemctl  enable  libvirtd --now
+4、virsh基本管理操作
+virsh  控制指令  [虚拟机名称]  [参数]
+查看KVM服务器节点   #virsh  nodeinfo
+列出有哪些虚拟机（包括未开启的）及各自的状态   # virsh  list  --all
+查看指定虚拟机rhel7.2的配置摘要信息  # virsh  dominfo  rhel7.2 
+指定虚拟机开机 # virsh  start  rhel7.2
+指定虚拟机关机 # virsh  shutdown  rhel7.2
+指定虚拟机强制关机 ]# virsh  destroy  rhel7.2
+指定虚拟机开机自启 # virsh  autostart  rhel7.2
+取消虚拟机开机自启 # virsh  autostart --disable  rhel7.2
+5、xml文件修改
+1)KVM虚拟机的xml配置文件也就是通常所说的虚拟机的描述文件，主要用来定义一个虚拟机的名称、UUID、CPU、内存、虚拟磁盘、网卡等各种参数设置。
+KVM虚拟机的xml配置文件默认位于： /etc/libvirt/qemu/虚拟机名.xml 
+2)编辑虚拟机rhel7.2的配置,调整name、uuid值，保存修改：
+[root@kvmsvr ~]# virsh  edit  rhel7.2
+3)删除旧名称的虚拟机配置
+[root@kvmsvr ~]# virsh  undefine  rhel7.2     //取消定义虚拟机
+6、虚拟机磁盘文件
+KVM虚拟机的磁盘文件默认位于:/var/lib/libvirt/images/
+7、KVM虚拟机的快照：
+1）通过在虚拟机磁盘镜像内保存不同时间点的状态数据实现备份，在必要时可将虚拟机恢复到指定的快照状态。
+2）qemu-img快照管理基本操作：虚拟机制作快照备份
+创建快照：qemu-img snapshot -c 快照名 qcow2磁盘
+列出快照：qemu-img snapshot -l qcow2磁盘
+恢复快照：qemu-img snapshot -a 快照名 qcow2磁盘
+删除快照：qemu-img snapshot -d 快照名 qcow2磁盘
+8、快建新虚拟机
+1)准备模板虚拟机
+找一台已经装好RHEL7系统、配置好本地yum源、关闭SELinux的虚拟机，提取模板虚拟机磁盘、xml配置文件备用。
+[root@kvmsvr ~]# qemu-img info  /data/images/rhel7_muban.qcow2 
+2)准备模板虚拟机配置文件
+[root@kvmsvr ~]# cat  /data/images/rhel7_muban.xm
+3）快建虚拟机
+qemu-img  create  -f  qcow2  -b  模板盘  新的虚拟机磁盘
+[root@kvmsvr ~]# qemu-img  create  -f  qcow2  -b  /data/images/rhel7_muban.qcow2  /data/images/svr7.qcow2
+
+二、系统进阶
+1、查看进程的主要命令工具：
+ps aux、ps –elf：查看进程静态快照
+top：查看进程动态排名
+PStree：查看进程与进程之间的树型关系结构
+pgrep：根据指定的名称或条件检索进程
+2、进程调度及终止
+进程调度及终止的主要命令工具：
+命令行 &：将命令行在后台运行
+Ctrl + z 组合键：挂起当前进程（暂停并转入后台）
+jobs：列出当前用户当前终端的后台任务
+bg 编号：启动指定编号的后台任务
+fg 编号：将指定编号的后台任务调入前台运行
+kill [-9] PID...：杀死指定PID值的进程
+kill [-9] %n：杀死第n个后台任务
+killall [-9] 进程名...：杀死指定名称的所有进程
+pkill：根据指定的名称或条件杀死进程
+3、系统日志分析
+1)常见的系统日志及各自用途：
+/var/log/messages，记录内核消息、各种服务的公共消息
+/var/log/dmesg，记录系统启动过程的各种消息
+/var/log/cron，记录与cron计划任务相关的消息
+/var/log/maillog，记录邮件收发相关的消息
+/var/log/secure，记录与访问限制相关的安全消息
+2)RHEL7提供的journalctl日志工具的常见用法：
+journalctl | grep 关键词
+journalctl -u 服务名 -p 优先级
+journalctl -n 消息条数
+journalctl --since="yyyy-mm-dd HH:MM:SS" --until="yyyy-mm-dd HH:MM:SS"
+
+三、实时同步
+
+
+
+
+
